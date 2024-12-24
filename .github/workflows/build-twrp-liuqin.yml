@@ -13,7 +13,7 @@ jobs:
 
     env:
       # 可以在这里配置一些环境变量，例如清华源地址等
-      # REPO_URL: "https://mirrors.tuna.tsinghua.edu.cn/git/git-repo"
+      REPO_URL: "https://mirrors.tuna.tsinghua.edu.cn/git/git-repo"
       MANIFEST_URL: "https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git"
       MANIFEST_BRANCH: "twrp-14"
       DEVICE_TREE_URL: "https://github.com/BI1PBUTHU/liuqindevicetree.git"
@@ -43,7 +43,7 @@ jobs:
           git config --global user.name "${GIT_USER_NAME}"
           git config --global user.email "${GIT_USER_EMAIL}"
           # 如果需要替换 AOSP 源到清华源，可以在这里继续添加
-          # git config --global url."https://mirrors.tuna.tsinghua.edu.cn/git/AOSP/".insteadOf "https://android.googlesource.com"
+          git config --global url."https://mirrors.tuna.tsinghua.edu.cn/git/AOSP/".insteadOf "https://android.googlesource.com"
 
       - name: Prepare repo tool
         run: |
