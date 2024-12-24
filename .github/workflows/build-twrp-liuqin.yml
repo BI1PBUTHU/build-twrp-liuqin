@@ -13,7 +13,7 @@ jobs:
 
     env:
       # 可以在这里配置一些环境变量，例如清华源地址等
-      REPO_URL: "https://gerrit.googlesource.com/git-repo"
+      REPO_URL: "https://storage.googleapis.com/git-repo-downloads/repo"
       MANIFEST_URL: "https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git"
       MANIFEST_BRANCH: "twrp-14"
       DEVICE_TREE_URL: "https://github.com/BI1PBUTHU/liuqindevicetree.git"
