@@ -1,0 +1,91 @@
+name: Build TWRP-14 for liuqin
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-twrp:
+    # 若官方免费机器资源不足，可改为使用自托管/付费 runner
+    runs-on: ubuntu-22.04
+
+    env:
+      # 可以在这里配置一些环境变量，例如清华源地址等
+      # REPO_URL: "https://mirrors.tuna.tsinghua.edu.cn/git/git-repo"
+      MANIFEST_URL: "https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git"
+      MANIFEST_BRANCH: "twrp-14"
+      DEVICE_TREE_URL: "https://github.com/BI1PBUTHU/liuqindevicetree.git"
+      DEVICE_TREE_BRANCH: "main"
+      DEVICE_PATH: "device/xiaomi/liuqin"
+      # 也可在这里配置 git 用户名和邮箱
+      GIT_USER_NAME: "Your Name"
+      GIT_USER_EMAIL: "youremail@yourdomain.com"
+
+    steps:
+      - name: Checkout this repo (for storing workflow file, README, etc.)
+        uses: actions/checkout@v3
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get upgrade -y
+          # 以下依赖列表来自教程（Ubuntu 22.04/Debian系）
+          sudo apt-get install -y \
+            bc bison build-essential ccache curl flex g++-multilib gcc-multilib git git-lfs gnupg gperf \
+            imagemagick lib32ncurses5-dev lib32readline-dev lib32z1-dev libelf-dev liblz4-tool \
+            libncurses5 libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop \
+            pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev
+
+      - name: Set git config
+        run: |
+          git config --global user.name "${GIT_USER_NAME}"
+          git config --global user.email "${GIT_USER_EMAIL}"
+          # 如果需要替换 AOSP 源到清华源，可以在这里继续添加
+          # git config --global url."https://mirrors.tuna.tsinghua.edu.cn/git/AOSP/".insteadOf "https://android.googlesource.com"
+
+      - name: Prepare repo tool
+        run: |
+          mkdir -p ~/bin
+          curl -o ~/bin/repo "${REPO_URL}"
+          chmod +x ~/bin/repo
+          echo "${HOME}/bin" >> $GITHUB_PATH   # 将 ~/bin 加入 PATH
+
+      - name: Sync TWRP source
+        run: |
+          # 创建一个专门放 TWRP 源码的目录
+          mkdir -p ~/twrp
+          cd ~/twrp
+          # 初始化仓库：使用 minimal-manifest-twrp，分支 twrp-14
+          repo init --depth=1 -u "${MANIFEST_URL}" -b "${MANIFEST_BRANCH}"
+          # 同步代码
+          repo sync --force-sync
+
+      - name: Clone device tree
+        run: |
+          cd ~/twrp
+          git clone --depth=1 -b "${DEVICE_TREE_BRANCH}" "${DEVICE_TREE_URL}" "${DEVICE_PATH}"
+
+      - name: Build TWRP
+        run: |
+          cd ~/twrp
+          # 初始化编译环境
+          source build/envsetup.sh
+
+          # lunch 目标（以 liuqin-eng 为例，如果你有别的 lunch combo 请自行修改）
+          lunch twrp_liuqin-eng
+
+          # 针对qti Lahaina，教程里示例是编译 bootimage，如需 recoveryimage 或 vendorbootimage，请改命令
+          mka recoveryimage
+
+      - name: Upload build artifact
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: TWRP-lahaina-build
+          path: |
+            ~/twrp/out/target/product/lahaina/recovery.img
+            # 如果编译的是 recoveryimage，那么把 recovery.img 也放到这里
+            # ~/twrp/out/target/product/lahaina/recovery.img
+            # 如果编译 vendorbootimage，就把 vendor_boot.img 放到这里
